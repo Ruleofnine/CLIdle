@@ -26,7 +26,7 @@ impl Player {
             points: Float::with_val(50, 0),
             ppt: Float::with_val(50, 0),
             pptmod: Float::with_val(50, 1),
-            ppc: Float::with_val(50, 1),
+            ppc: Float::with_val(50, 1e100),
             ppcmod: Float::with_val(50, 1),
             pps: Float::with_val(50, 0),
             prestige_points: Float::new(10),

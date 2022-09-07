@@ -117,7 +117,9 @@ impl<'a> App<'a> {
     pub fn on_down(&mut self) {
         match self.tabs.tabtype {
             TabType::Main => {
-                if self.player.owned_pointgenerators.state.selected().is_some() {
+                if self.player.owned_pointgenerators.state.selected().is_some()
+                    || !self.upgrade_state.state.selected().is_some()
+                {
                     self.player.owned_pointgenerators.next()
                 } else if true {
                     self.upgrade_state.next();
@@ -146,25 +148,27 @@ impl<'a> App<'a> {
         }
     }
     pub fn on_right(&mut self) {
-        // match self.tabs.tabtype {
-        // TabType::Main => match self.upgrade_list.state.selected() {
-        //     Some(_) => {
-        //         self.upgrade_list.unselect();
-        //         self.player.owned_pointgenerators.next();
-        //     }
-        //     None => {
-        //         self.player.owned_pointgenerators.unselect();
-        //         self.upgrade_list.state.select(Some(0))
-        //     }
-        // },
-        // TabType::Debug => {}
-        // _ => {}
-        // }
+        match self.tabs.tabtype {
+            TabType::Main => match self.upgrade_state.state.selected() {
+                Some(_) => {
+                    self.upgrade_state.unselect();
+                    self.player.owned_pointgenerators.next();
+                }
+                None => {
+                    self.player.owned_pointgenerators.unselect();
+                    self.upgrade_state.state.select(Some(0))
+                }
+            },
+            TabType::Debug => {}
+            _ => {}
+        }
     }
-
     pub fn on_esc(&mut self) {
         match self.tabs.tabtype {
-            TabType::Main => self.player.owned_pointgenerators.unselect(),
+            TabType::Main => {
+                self.player.owned_pointgenerators.unselect();
+                self.upgrade_state.unselect()
+            }
             TabType::Debug => self.debug_info.unselect(),
             _ => {}
         }
@@ -241,7 +245,7 @@ impl<'a> App<'a> {
                     if bought {
                         self.upgrade_state.upgrade_index =
                             Upgrade::create_upgrade_indexes(&mut self.upgrade_list);
-                            self.upgrade_state.bought();
+                        self.upgrade_state.bought();
                     }
                 }
             }
