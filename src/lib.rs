@@ -1,0 +1,12 @@
+pub mod generators;
+pub mod upgrades;
+pub mod debug_menu;
+pub mod utils;
+pub mod ui;
+pub mod app;
+pub mod player;
+pub mod crossterm;
+pub mod input;
+pub const TICK_RATE:u64 = 250;
+pub const TPS:u64 = 1000/TICK_RATE;
+pub use player::Player;
