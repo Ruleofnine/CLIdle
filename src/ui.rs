@@ -2,6 +2,7 @@ use crate::{
     app::{App, TabType},
     debug_menu,
     player::Player,
+    upgrades::Upgrade,
     utils::format_number,
 };
 use rug::Float;
@@ -71,9 +72,9 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .split(f.size());
     let titles = app
         .tabs
-        .titles
+        .tabs
         .iter()
-        .map(|t| Spans::from(Span::styled(*t, Style::default().fg(Color::Green))))
+        .map(|t| Spans::from(Span::styled(t.0, Style::default().fg(Color::Green))))
         .collect();
 
     let tabs = Tabs::new(titles)
@@ -86,29 +87,112 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         //Send the rest of the terminal chunk to tab to render
         TabType::Main => draw_first_tab(f, app, chunks[1]),
         TabType::Debug => debug_menu::draw_debug_tab(f, app, chunks[1]),
-        // 1 => draw_first_tab(f, app, chunks[1]),
+        TabType::Prestige => draw_prestige_tab(f, app, chunks[1]),
         // 2 => draw_third_tab(f, app, chunks[1]),
         _ => {}
     };
 }
+fn draw_prestige_tab<B>(f: &mut Frame<B>, app: &mut App, area: Rect)
+where
+    B: Backend,
+{
+    let horizontal_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Length(40), Constraint::Min(0)].as_ref())
+        .split(area);
+    //Split again the top 4 for the points
+    let point_chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(3), Constraint::Min(10)].as_ref())
+        .split(horizontal_chunks[0]);
+    draw_prestige_text(f, point_chunks[0], &app.player);
+}
+fn draw_prestige_text<B>(f: &mut Frame<B>, area: Rect, player: &Player)
+where
+    B: Backend,
+{
+    let text = vec![Spans::from(vec![
+        Span::from("Prestige Points: "),
+        Span::styled(
+            format_number(&player.prestige_points),
+            Style::default().add_modifier(Modifier::BOLD),
+        ),
+    ])];
+    let block = Block::default().borders(Borders::ALL).title(Span::styled(
+        "Prestige",
+        Style::default()
+            .fg(Color::Green)
+            .add_modifier(Modifier::BOLD),
+    ));
+    let paragraph = Paragraph::new(text).block(block).wrap(Wrap { trim: true });
+    f.render_widget(paragraph, area);
+}
+
 fn draw_first_tab<B>(f: &mut Frame<B>, app: &mut App, area: Rect)
 //Receive the second chunk
 where
     B: Backend,
 {
-    //Split chunk horizontally 30 inward
-    let horizontal_chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Length(40), Constraint::Min(20)].as_ref())
+    //split 5 inward for points and keypress upgrades
+    let initial_horizontal_chunks = Layout::default()
+        .constraints([Constraint::Length(5), Constraint::Min(0)].as_ref())
         .split(area);
-    //Split again the top 4 for the points
-    let point_chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Length(5), Constraint::Min(10)].as_ref())
-        .split(horizontal_chunks[0]);
-    draw_points_text(f, point_chunks[0], &app.player);
+    //split the first chunk generated in to approxtimately in the middle for points/keypress
+    //upgraeds
+    let points_keypress_upgrades_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Length(60), Constraint::Min(0)].as_ref())
+        .split(initial_horizontal_chunks[0]);
+    // let mut keypress_upgrades_list: Vec<ListItem> = Vec::new();
+    // for u in &app.player.unowned_upgrades {
+    //     if Float::with_val(10, &app.player.points * 3000) > u.cost {
+    //         let color = if_can_buy_style(&u.cost, &app.player.points);
+    //             keypress_upgrades_list.push(ListItem::new(Span::styled(
+    //                 format!("{} Cost: {}", u.name, format_number(&u.cost)),
+    //                 Style::default().fg(color).add_modifier(Modifier::BOLD),
+    //             )))
+    //
+
+    // }
+    // }
+    // let keypress_upgrades_wiget = List::new(keypress_upgrades_list)
+    //     .block(
+    //         Block::default().borders(Borders::ALL).title(Span::styled(
+    //             "Keypress Upgrades",
+    //             Style::default()
+    //                 .fg(Color::Magenta)
+    //                 .add_modifier(Modifier::BOLD),
+    //         )),
+    //     )
+    //     .highlight_symbol(">")
+    //     .highlight_style(Style::default().fg(Color::Magenta));
+    //
+    // f.render_stateful_widget(
+    //     keypress_upgrades_wiget,
+    //     points_keypress_upgrades_chunks[1],
+    //     &mut app.upgrade_state.state,
+    // );
+    // //Split chunk horizontally 30 inward
+    app.upgrade_state.upgrade_indexes = Vec::new();
+    let generator_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Length(50), Constraint::Min(20)].as_ref())
+        .split(initial_horizontal_chunks[1]);
+    draw_points_text(f, points_keypress_upgrades_chunks[0], &app.player);
     let mut upgrades_list: Vec<ListItem> = Vec::new();
     let mut gen_list: Vec<ListItem> = Vec::new();
+    let mut upgrade_index = 0;
+    for upgrade in &app.upgrade_list[0] {
+        if Upgrade::near_cost(&app.player.points, &upgrade.cost) {
+            let color = if_can_buy_style(&upgrade.cost, &app.player.points);
+            upgrades_list.push(ListItem::new(Span::styled(
+                format!("{} Cost: {}", upgrade.name, format_number(&upgrade.cost)),
+                Style::default().fg(color).add_modifier(Modifier::BOLD),
+            )));
+        app.upgrade_state.upgrade_indexes.push((0, upgrade_index));
+        upgrade_index += 1;
+        }
+    }
     let gen_iter = app
         .player
         .owned_pointgenerators
@@ -116,7 +200,6 @@ where
         .iter_mut()
         .enumerate();
     for (gi, g) in gen_iter {
-
         let color = if_can_buy_style(&g.cost, &app.player.points);
         let style = Style::default().add_modifier(Modifier::BOLD).fg(color);
         let span = Spans::from(vec![Span::styled(
@@ -129,16 +212,22 @@ where
             style,
         )]);
         gen_list.push(ListItem::new(span));
-        if g.amount > 0{
-        for u in &mut app.upgrade_list[gi].iter() { 
-            let color = if_can_buy_style(&u.cost,&app.player.points);
-            upgrades_list.push(ListItem::new(Span::styled(
-                format!("{} Cost: {}", u.name, format_number(&u.cost)),
-                Style::default().fg(color).add_modifier(Modifier::BOLD),
-            )));
-        }}
+        if g.amount > 0 {
+            let mut upgrade_index = 0;
+            for upgrade in &app.upgrade_list[gi + 1] {
+                if Upgrade::near_cost(&app.player.points, &upgrade.cost) {
+                    let color = if_can_buy_style(&upgrade.cost, &app.player.points);
+                    upgrades_list.push(ListItem::new(Span::styled(
+                        format!("{} Cost: {}", upgrade.name, format_number(&upgrade.cost)),
+                        Style::default().fg(color).add_modifier(Modifier::BOLD),
+                    )));
+                app.upgrade_state.upgrade_indexes.push((gi+1, upgrade_index));
+                }
+                upgrade_index+=1;
+            }
+        }
     }
-    app.upgrade_state.max_index=upgrades_list.len();
+    app.upgrade_state.max_index = upgrades_list.len();
     let generator_list = List::new(gen_list)
         .block(
             Block::default().borders(Borders::ALL).title(Span::styled(
@@ -152,13 +241,14 @@ where
         .highlight_style(Style::default().fg(Color::Magenta));
     f.render_stateful_widget(
         generator_list,
-        point_chunks[1],
+        generator_chunks[0],
         &mut app.player.owned_pointgenerators.state,
     );
+
     let upgrades_wiget = List::new(upgrades_list)
         .block(
             Block::default().borders(Borders::ALL).title(Span::styled(
-                "Upgrades",
+                "Generator Upgrades",
                 Style::default()
                     .fg(Color::Magenta)
                     .add_modifier(Modifier::BOLD),
@@ -169,7 +259,7 @@ where
 
     f.render_stateful_widget(
         upgrades_wiget,
-        horizontal_chunks[1],
+        generator_chunks[1],
         &mut app.upgrade_state.state,
     );
 }

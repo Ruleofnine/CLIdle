@@ -28,16 +28,19 @@ pub struct PointGenerator {
     pub cost: Float,
     pub cost_multiplier: Float,
     pub amount: Float,
-    pub points_generated: Float,
+    pub base_points_generated: Float,
+    pub mod_points_generated: Float,
+
     pub owned_upgrades: Vec<Upgrade>,
 }
 impl PointGenerator {
-    pub fn new(name: &str, cost: Float, cost_multiplier: f64, points_generated: Float) -> Self {
+    pub fn new(name: &str, cost: Float, cost_multiplier: f64, base_points_generated: Float) -> Self {
         PointGenerator {
             name: name.to_string(),
             cost,
             cost_multiplier: Float::with_val(53, cost_multiplier),
-            points_generated,
+            mod_points_generated: Float::with_val(20,1),
+            base_points_generated,
             amount: Float::with_val(50, 0),
             owned_upgrades: Vec::new(),
         }

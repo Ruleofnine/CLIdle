@@ -1,16 +1,16 @@
 use crate::{
     generators::{BuyAmount, PointGenerator},
     ui::StatefulList,
-    upgrades::{Upgrade, UpgradeType},
+    upgrades::{Upgrade, UpgradeType,MulitType},
     TPS,
 };
-use rug::{Assign, Float};
+use rug::Float;
 
 pub struct Player {
     pub name: String,
     pub points: Float,
     pub ppt: Float,
-    pub pptmod: Float,
+    // pub ppc_cost_base: Float,
     pub ppc: Float,
     pub ppcmod: Float,
     pub pps: Float,
@@ -23,10 +23,11 @@ impl Player {
     pub fn new(new_name: &str) -> Player {
         Player {
             name: String::from(new_name),
-            points: Float::with_val(50, 0),
+            points: Float::with_val(50, 1e100),
             ppt: Float::with_val(50, 0),
-            pptmod: Float::with_val(50, 1),
-            ppc: Float::with_val(50, 1e100),
+            // pptmod: Float::with_val(50, 1),
+            ppc: Float::with_val(50, 1),
+            // ppc_cost_base: Float::with_val(50,1),
             ppcmod: Float::with_val(50, 1),
             pps: Float::with_val(50, 0),
             prestige_points: Float::new(10),
@@ -42,22 +43,34 @@ impl Player {
     pub fn calc_ppt(&mut self) {
         self.ppt = Float::new(10);
         for g in &self.owned_pointgenerators.items {
-            let pta = &g.points_generated * &g.amount;
-            self.ppt += pta;
+            let points_to_add = Float::with_val(20, &g.base_points_generated);
+            self.ppt += Float::with_val(20, &g.mod_points_generated * points_to_add) * &g.amount;
         }
-        self.ppt *= &self.pptmod
     }
     pub fn increase_points(&mut self) {
         self.points += &self.ppt
     }
     pub fn click_points(&mut self) {
+        for u in &self.owned_upgrades{
+            self.ppcmod*=&u.number;
+        }
         self.points += &self.ppc * &self.ppcmod
     }
     pub fn calc_pps(&mut self) {
         self.calc_ppt();
-        let mut pps = Float::new(10);
-        pps.assign(&self.ppt * TPS);
-        self.pps = pps;
+        self.pps = Float::with_val(50, &self.ppt * TPS);
+    }
+    pub fn calc_ppc(&mut self){
+        self.ppc = Float::with_val(10,1);
+        self.ppcmod = Float::with_val(10,1);
+        for u in &self.owned_upgrades{
+            match u.mulittype{
+                MulitType::PointsBase =>{self.ppc+=&u.number},
+                MulitType::PointsMulti=>{self.ppcmod*=&u.number},
+                _=>{}
+            }
+            self.ppc = Float::with_val(20, &self.ppc*&self.ppcmod);
+        }
     }
     pub fn buy_generator_amount(
         &mut self,
@@ -114,23 +127,30 @@ impl Player {
         upgrade_indexes: &mut Vec<(usize, usize)>,
         selected_index: usize,
     ) -> bool {
-        let upgrade_index = upgrade_indexes[selected_index];
-        if self.points > upgrades[upgrade_index.0][upgrade_index.1].cost
-            && self.owned_pointgenerators.items[0].amount > 0
-        {
-            let upgrade = upgrades[upgrade_index.0].remove(upgrade_index.1);
-            self.points -= &upgrade.cost;
-            if matches!(upgrade.upgradetype, UpgradeType::Generator) {
-                self.owned_pointgenerators.items[upgrade_index.0].points_generated *=
-                    &upgrade.number;
-                self.owned_pointgenerators.items[upgrade_index.0]
-                    .owned_upgrades
-                    .push(upgrade);
-                self.calc_pps();
-            }
-            true
-        } else {
-            false
+        let mut upgrade_index = upgrade_indexes[selected_index];
+        if self.points < upgrades[upgrade_index.0][upgrade_index.1].cost {
+            return false;
         }
+        let upgrade = upgrades[upgrade_index.0].remove(upgrade_index.1);
+        match upgrade.upgradetype {
+            UpgradeType::Click => {
+                    self.points -= &upgrade.cost;
+                    self.owned_upgrades.push(upgrade);
+                    self.calc_ppc()
+            }
+            UpgradeType::Generator => {
+                upgrade_index.0 -= 1;
+                if self.owned_pointgenerators.items[upgrade_index.0].amount > 0 {
+                    self.points -= &upgrade.cost;
+                    self.owned_pointgenerators.items[upgrade_index.0].mod_points_generated *=
+                        &upgrade.number;
+                    self.owned_pointgenerators.items[upgrade_index.0]
+                        .owned_upgrades
+                        .push(upgrade);
+                    self.calc_pps();
+                }
+            }
+        }
+        true
     }
 }

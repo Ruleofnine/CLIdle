@@ -20,7 +20,7 @@ pub fn run(
     player: Player,
     generators:Vec<PointGenerator>,
     upgrades:Vec<Vec<Upgrade>>,
-    upgrade_indexes:Vec<(usize,usize)>
+    // upgrade_indexes:Vec<(usize,usize)>
 
 ) -> Result<(), Box<dyn Error>> {
     // setup terminal
@@ -30,7 +30,7 @@ pub fn run(
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
     // create app and run it
-    let app = App::new("CLIdle", enhanced_graphics, player,generators,upgrades,upgrade_indexes);
+    let app = App::new("CLIdle", enhanced_graphics, player,generators,upgrades);
     let res = run_app(&mut terminal, app, tick_rate);
 
     // restore terminal

@@ -1,8 +1,11 @@
+use crate::player::Player;
 use rug::Float;
-use tui::widgets::ListState;
+use tui::widgets::{ListState,ListItem};
+
 #[derive(Clone, Debug)]
 pub enum MulitType {
     PointsMulti,
+    PointsBase,
     CostDiv,
 }
 #[derive(Clone, Debug)]
@@ -14,15 +17,15 @@ pub enum UpgradeType {
 pub struct UpgradeState {
     pub state: ListState,
     pub max_index: usize,
-    pub upgrade_index: Vec<(usize, usize)>,
+    pub upgrade_indexes: Vec<(usize, usize)>,
 }
 
 impl UpgradeState {
-    pub fn new(upgrade_indexes: Vec<(usize, usize)>) -> UpgradeState {
+    pub fn new() -> UpgradeState {
         UpgradeState {
             state: ListState::default(),
             max_index: 0,
-            upgrade_index: upgrade_indexes,
+            upgrade_indexes: Vec::new(),
         }
     }
     pub fn next(&mut self) {
@@ -58,9 +61,9 @@ impl UpgradeState {
     pub fn bought(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
-                if self.max_index == 0 || i==0{
+                if self.max_index == 0 || i == 0 {
                     0
-                } else if i == self.max_index-1{
+                } else if i == self.max_index - 1 {
                     i - 1
                 } else {
                     i
@@ -99,33 +102,68 @@ impl Upgrade {
             number,
         }
     }
-    pub fn test_upgrade(number: usize, cost: f64) -> Upgrade {
-        Upgrade {
-            name: String::from(format!("Test Upgrade {}", number)),
-            cost: Float::with_val(20, cost),
-            mulittype: MulitType::PointsMulti,
-            upgradetype: UpgradeType::Generator,
-            number: Float::with_val(20, 2),
-        }
-    }
-    pub fn test_upgrade_vec() -> Vec<Upgrade> {
-        vec![
-            Upgrade::test_upgrade(1, 1e1),
-            Upgrade::test_upgrade(2, 1e4),
-            Upgrade::test_upgrade(3, 1e5),
-        ]
-    }
-    pub fn create_upgrade_indexes(upgrades: &mut Vec<Vec<Upgrade>>) -> Vec<(usize, usize)> {
+    pub fn create_upgrade_indexes(
+        vec_vec_upgrades: &mut Vec<Vec<Upgrade>>,
+        player: &Player,
+    ) -> Vec<(usize, usize)> {
         let mut upgrade_indexes: Vec<(usize, usize)> = Vec::new();
-        for (gi, g) in upgrades.iter().enumerate() {
-            for (ui, _) in g.iter().enumerate() {
-                upgrade_indexes.push((gi, ui))
+        for (vector_index, vector) in vec_vec_upgrades.iter().enumerate() {
+            for (upgrade_index, upgrade) in vector.iter().enumerate() {
+                if Upgrade::near_cost(&player.points, &upgrade.cost) {
+                    upgrade_indexes.push((vector_index, upgrade_index))
+                }
             }
         }
         upgrade_indexes
     }
-    pub fn make_generator_upgrades() -> Vec<Vec<Upgrade>> {
+    pub fn near_cost(points: &Float, cost: &Float) -> bool {
+        if &Float::with_val(30, points * 3000) > cost {
+            true
+        } else {
+            false
+        }
+    }
+    pub fn make_upgrades() -> Vec<Vec<Upgrade>> {
+        let keypress_upgrades = Upgrade::make_keypress_upgrades();
+        let mut generator_upgrades = Upgrade::make_generator_upgrades();
+        generator_upgrades[0] = keypress_upgrades;
+        generator_upgrades
+    }
+    fn make_keypress_upgrades() -> Vec<Upgrade> {
+        vec![
+            Upgrade::new(
+                "Key Upgrade 1",
+                Float::with_val(10, 10),
+                MulitType::PointsMulti,
+                UpgradeType::Click,
+                Float::with_val(10, 2),
+            ),
+            Upgrade::new(
+                "Key Upgrade 2",
+                Float::with_val(10, 100),
+                MulitType::PointsMulti,
+                UpgradeType::Click,
+                Float::with_val(10, 2),
+            ),
+            Upgrade::new(
+                "Key Upgrade 3",
+                Float::with_val(10, 5000),
+                MulitType::PointsMulti,
+                UpgradeType::Click,
+                Float::with_val(10, 2),
+            ),
+            Upgrade::new(
+                "Key Upgrade 4",
+                Float::with_val(10, 1e102),
+                MulitType::PointsMulti,
+                UpgradeType::Click,
+                Float::with_val(10, 2),
+            ),
+        ]
+    }
+    fn make_generator_upgrades() -> Vec<Vec<Upgrade>> {
         let generator_vec_of_vecs = vec![
+            Vec::new(),
             vec![
                 Upgrade::new(
                     "Gen 1, upgrade 1",
@@ -145,7 +183,7 @@ impl Upgrade {
             vec![
                 Upgrade::new(
                     "Gen 2, upgrade 1",
-                    Float::with_val(20, 10),
+                    Float::with_val(20, 1e101),
                     MulitType::PointsMulti,
                     UpgradeType::Generator,
                     Float::with_val(20, 2),

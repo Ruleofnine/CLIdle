@@ -13,33 +13,38 @@ pub enum TabType {
     Debug,
 }
 pub struct TabsState<'a> {
-    pub titles: Vec<&'a str>,
+    // pub titles: Vec<&'a str>,
     pub index: usize,
     pub tabtype: TabType,
-    pub tabtypes: Vec<TabType>,
+    // pub tabtypes: Vec<TabType>,
+    pub tabs: Vec<(&'a str, TabType)>,
 }
 
 impl<'a> TabsState<'a> {
-    pub fn new(titles: Vec<&'a str>, tabtypes: Vec<TabType>) -> TabsState {
+    // pub fn new(titles: Vec<&'a str>, tabtypes: Vec<TabType>,tabs: BTreeMap<&'a str,TabType>) -> TabsState {
+    pub fn new(tabs: Vec<(&'a str, TabType)>) -> TabsState {
         TabsState {
-            titles,
+            // titles,
             index: 0,
             tabtype: TabType::Main,
-            tabtypes,
+            // tabtypes,
+            tabs,
         }
     }
     pub fn next(&mut self) {
-        self.index = (self.index + 1) % self.titles.len();
-        self.tabtype = self.tabtypes[self.index]
+        self.index = (self.index + 1) % self.tabs.len();
+        self.tabtype = self.tabs.iter().nth(self.index).unwrap().1;
     }
 
     pub fn previous(&mut self) {
         if self.index > 0 {
             self.index -= 1;
         } else {
-            self.index = self.titles.len() - 1;
+            // self.index = self.titles.len() - 1;
+            self.index = (self.index + 1) % self.tabs.len();
         }
-        self.tabtype = self.tabtypes[self.index]
+        // self.tabtype = self.tabtypes[self.index]
+        self.tabtype = self.tabs.iter().nth(self.index).unwrap().1;
     }
 }
 pub struct App<'a> {
@@ -63,7 +68,7 @@ impl<'a> App<'a> {
         player: Player,
         unowned_pointgenerators: Vec<PointGenerator>,
         upgrade_list: Vec<Vec<Upgrade>>,
-        upgrade_indexes: Vec<(usize, usize)>,
+        // upgrade_indexes: Vec<(usize, usize)>,
     ) -> App<'a> {
         App {
             title,
@@ -72,34 +77,19 @@ impl<'a> App<'a> {
             input_mode: InputMode::Normal,
             should_quit: false,
             player,
-            tabs: TabsState::new(
-                vec!["Points", "Settings", "Prestige", "Debug"],
-                vec![
-                    TabType::Main,
-                    TabType::Settings,
-                    TabType::Prestige,
-                    TabType::Debug,
-                ],
-            ),
+            tabs: TabsState::new(vec![
+                ("Points", TabType::Main),
+                // ("Settings", TabType::Settings),
+                // ("Prestige", TabType::Prestige),
+                ("Debug", TabType::Debug),
+            ]),
             enhanced_graphics,
             debug_info: StatefulList::with_items(Vec::new()),
             upgrade_list,
-            upgrade_state: UpgradeState::new(upgrade_indexes),
+            upgrade_state: UpgradeState::new(),
             unowned_pointgenerators,
         }
     }
-    // pub fn all_upgrades_into_upgrade_vec(&mut self) {
-    //     let gen_iter = self.generators.items.iter_mut();
-    //     for g in gen_iter {
-    //         let mut current_vector: Vec<Upgrade> = Vec::new();
-    //         let unowned_iter = g.unowned_upgrades.iter();
-    //         for u in unowned_iter {
-    //             current_vector.push(u.clone())
-    //         }
-    //         self.upgrade_list.push(current_vector)
-    //     }
-    // }
-
     pub fn on_up(&mut self) {
         match self.tabs.tabtype {
             TabType::Main => {
@@ -211,6 +201,24 @@ impl<'a> App<'a> {
                         self.input_mode = InputMode::Normal
                     }
                 }
+                'd' => {
+                    self.debug_info.insert_and_goto_bottom(format!(
+                        "upgrade index {:?}",
+                        self.upgrade_state.upgrade_indexes
+                    ));
+                    self.debug_info.insert_and_goto_bottom(format!(
+                        "upgrade list len {:?}",
+                        self.upgrade_state.upgrade_indexes.len()
+                    ));
+                    self.debug_info.insert_and_goto_bottom(format!(
+                        "upgrade_state {:?}",
+                        self.upgrade_state.state
+                    ));
+                    self.debug_info.insert_and_goto_bottom(format!(
+                        "max index {:?}",
+                        self.upgrade_state.max_index
+                    ));
+                }
                 _ => {
                     self.player.click_points();
                 }
@@ -231,20 +239,12 @@ impl<'a> App<'a> {
                         &mut self.unowned_pointgenerators,
                     )
                 } else if upgrade_list_state.is_some() && self.upgrade_state.max_index > 0 {
-                    self.debug_info
-                        .insert_and_goto_bottom(format!("{}", upgrade_list_state.unwrap()));
-                    self.debug_info.insert_and_goto_bottom(format!(
-                        "upgrade index: {:?}",
-                        self.upgrade_state.upgrade_index[upgrade_list_state.unwrap()]
-                    ));
                     let bought = self.player.buy_upgrade(
                         &mut self.upgrade_list,
-                        &mut self.upgrade_state.upgrade_index,
+                        &mut self.upgrade_state.upgrade_indexes,
                         upgrade_list_state.unwrap(),
                     );
                     if bought {
-                        self.upgrade_state.upgrade_index =
-                            Upgrade::create_upgrade_indexes(&mut self.upgrade_list);
                         self.upgrade_state.bought();
                     }
                 }
