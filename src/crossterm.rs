@@ -17,11 +17,6 @@ use tui::{
 pub fn run(
     tick_rate: Duration,
     enhanced_graphics: bool,
-    player: Player,
-    generators:Vec<PointGenerator>,
-    upgrades:Vec<Vec<Upgrade>>,
-    // upgrade_indexes:Vec<(usize,usize)>
-
 ) -> Result<(), Box<dyn Error>> {
     // setup terminal
     enable_raw_mode()?;
@@ -30,7 +25,8 @@ pub fn run(
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
     // create app and run it
-    let app = App::new("CLIdle", enhanced_graphics, player,generators,upgrades);
+    let mut app = App::new("CLIdle", enhanced_graphics);
+    app.reset_generators_and_upgrades();
     let res = run_app(&mut terminal, app, tick_rate);
 
     // restore terminal

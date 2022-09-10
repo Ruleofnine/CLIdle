@@ -7,6 +7,7 @@ pub mod app;
 pub mod player;
 pub mod crossterm;
 pub mod input;
+pub mod tabs;
 pub const TICK_RATE:u64 = 250;
 pub const TPS:u64 = 1000/TICK_RATE;
 pub use player::Player;

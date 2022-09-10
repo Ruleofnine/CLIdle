@@ -5,6 +5,7 @@ use crate::{
     ui::StatefulList,
     upgrades::{Upgrade, UpgradeState},
 };
+use tui::widgets::TableState;
 #[derive(Clone, Copy, Debug)]
 pub enum TabType {
     Main,
@@ -16,19 +17,17 @@ pub struct TabsState<'a> {
     // pub titles: Vec<&'a str>,
     pub index: usize,
     pub tabtype: TabType,
-    // pub tabtypes: Vec<TabType>,
     pub tabs: Vec<(&'a str, TabType)>,
+    pub prestige: bool,
 }
 
 impl<'a> TabsState<'a> {
-    // pub fn new(titles: Vec<&'a str>, tabtypes: Vec<TabType>,tabs: BTreeMap<&'a str,TabType>) -> TabsState {
     pub fn new(tabs: Vec<(&'a str, TabType)>) -> TabsState {
         TabsState {
-            // titles,
             index: 0,
             tabtype: TabType::Main,
-            // tabtypes,
             tabs,
+            prestige: false,
         }
     }
     pub fn next(&mut self) {
@@ -47,6 +46,7 @@ impl<'a> TabsState<'a> {
         self.tabtype = self.tabs.iter().nth(self.index).unwrap().1;
     }
 }
+
 pub struct App<'a> {
     pub title: &'a str,
     pub input: String,
@@ -59,15 +59,16 @@ pub struct App<'a> {
     pub debug_info: StatefulList<String>,
     pub upgrade_list: Vec<Vec<Upgrade>>,
     pub upgrade_state: UpgradeState,
+    pub prestige_state: StatefulList<String>,
     pub unowned_pointgenerators: Vec<PointGenerator>,
 }
+
 impl<'a> App<'a> {
     pub fn new(
         title: &'a str,
         enhanced_graphics: bool,
-        player: Player,
-        unowned_pointgenerators: Vec<PointGenerator>,
-        upgrade_list: Vec<Vec<Upgrade>>,
+        // unowned_pointgenerators: Vec<PointGenerator>,
+        // upgrade_list: Vec<Vec<Upgrade>>,
         // upgrade_indexes: Vec<(usize, usize)>,
     ) -> App<'a> {
         App {
@@ -76,7 +77,7 @@ impl<'a> App<'a> {
             output: String::new(),
             input_mode: InputMode::Normal,
             should_quit: false,
-            player,
+            player:Player::new("Test"),
             tabs: TabsState::new(vec![
                 ("Points", TabType::Main),
                 // ("Settings", TabType::Settings),
@@ -85,9 +86,10 @@ impl<'a> App<'a> {
             ]),
             enhanced_graphics,
             debug_info: StatefulList::with_items(Vec::new()),
-            upgrade_list,
+            upgrade_list: vec![Vec::new()],
             upgrade_state: UpgradeState::new(),
-            unowned_pointgenerators,
+            prestige_state: StatefulList::with_items(vec!["Prestige?".to_string()]),
+            unowned_pointgenerators: Vec::new(),
         }
     }
     pub fn on_up(&mut self) {
@@ -118,6 +120,7 @@ impl<'a> App<'a> {
             TabType::Debug => {
                 self.debug_info.next();
             }
+            TabType::Prestige => self.prestige_state.next(),
             _ => {}
         }
     }
@@ -160,6 +163,7 @@ impl<'a> App<'a> {
                 self.upgrade_state.unselect()
             }
             TabType::Debug => self.debug_info.unselect(),
+            TabType::Prestige => self.prestige_state.unselect(),
             _ => {}
         }
     }
@@ -227,6 +231,16 @@ impl<'a> App<'a> {
         }
     }
     pub fn on_enter(&mut self) {
+        if self.player.points >= 0 && !self.tabs.prestige{
+            if self.tabs.index == 1 {
+                self.tabs.index += 1;
+            }
+            self.tabs
+                .tabs
+                .insert(self.tabs.tabs.len() - 1, ("Prestige", TabType::Prestige));
+            self.tabs.prestige = true;
+        }
+
         match self.tabs.tabtype {
             TabType::Main => {
                 // later on will need to see if upgrades are seleceted
@@ -259,6 +273,14 @@ impl<'a> App<'a> {
                 }
                 _ => {}
             },
+            TabType::Prestige => {
+                if self.prestige_state.state.selected().is_some() {
+                    self.player = self.player.prestige();
+                    self.tabs.index = 0;
+                    self.tabs.tabtype = TabType::Main;
+                    self.reset_generators_and_upgrades()
+                }
+            }
             _ => {}
         }
     }
@@ -266,5 +288,9 @@ impl<'a> App<'a> {
     pub fn on_tick(&mut self) {
         // Update progress
         self.player.increase_points();
+    }
+    pub fn reset_generators_and_upgrades(&mut self)  {
+        self.unowned_pointgenerators = PointGenerator::make_generators();
+        self.upgrade_list = Upgrade::make_upgrades();
     }
 }

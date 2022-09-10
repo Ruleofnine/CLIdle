@@ -93,40 +93,41 @@ fn buyfive() {
     player.buy_generator_amount(0, BuyAmount::FIVE, &mut PointGenerator::make_generators());
     assert_eq!(player.owned_pointgenerators.items[0].amount, 5);
 }
-// #[test]
-// fn is_pps_correct() {
-//     let mut player = Player::new("test");
-//     player.points += 100000;
-//     let mut generators = PointGenerator::make_generators();
-//     player.buy_generator_amount(0, BuyAmount::ONE, &mut generators);
-//     let gen_pps = player.owned_pointgenerators.items[0]
-//         .base_points_generated
-//         .clone()
-//         * 1000
-//         / TICK_RATE
-//         * &player.owned_pointgenerators.items[0].amount;
-//     player.calc_pps();
-//     assert_eq!(player.pps, gen_pps);
-//     player.buy_generator_amount(0, BuyAmount::ONE, &mut generators);
-//     player.calc_pps();
-//     let gen_pps = player.owned_pointgenerators.items[0]
-//         .base_points_generated
-//         .clone()
-//         * 1000
-//         / TICK_RATE
-//         * &player.owned_pointgenerators.items[0].amount;
-//     assert_eq!(player.pps, gen_pps);
-//     player.buy_generator_amount(1, BuyAmount::ONE, &mut generators);
-//     player.calc_pps();
-//     let mut upgrades = Upgrade::make_generator_upgrades();
-//     let mut upgrade_indexes = Upgrade::create_upgrade_indexes(&mut upgrades);
-//     player.buy_upgrade(&mut upgrades, &mut upgrade_indexes, 0);
-//     assert_eq!(
-//         player.owned_pointgenerators.items[0].owned_upgrades[0].name,
-//         "Gen 1, upgrade 1"
-//     );
-// let gen_pps = player.owned_pointgenerators.items[0].points_generated.clone()*1000/TICK_RATE*&player.owned_pointgenerators.items[0].amount;
-// }
+#[test]
+fn is_pps_correct() {
+    let mut player = Player::new("test");
+    player.points += 100000;
+    let mut generators = PointGenerator::make_generators();
+    player.buy_generator_amount(0, BuyAmount::ONE, &mut generators);
+    let gen_pps = player.owned_pointgenerators.items[0]
+        .base_points_generated
+        .clone()
+        * 1000
+        / TICK_RATE
+        * &player.owned_pointgenerators.items[0].amount;
+    player.calc_pps();
+    assert_eq!(player.pps, gen_pps);
+    player.buy_generator_amount(0, BuyAmount::ONE, &mut generators);
+    player.calc_pps();
+    let gen_pps = player.owned_pointgenerators.items[0]
+        .base_points_generated
+        .clone()
+        * 1000
+        / TICK_RATE
+        * &player.owned_pointgenerators.items[0].amount;
+    assert_eq!(player.pps, gen_pps);
+    player.buy_generator_amount(1, BuyAmount::ONE, &mut generators);
+    player.calc_pps();
+    let mut upgrades = Upgrade::make_upgrades();
+    let mut upgrade_indexes = Upgrade::create_upgrade_indexes(&mut upgrades,&player);
+    player.buy_upgrade(&mut upgrades, &mut upgrade_indexes, 4);
+    assert_eq!(
+        player.owned_pointgenerators.items[0].owned_upgrades[0].name,
+        "Gen 1, upgrade 1"
+    );
+let gen_pps = player.owned_pointgenerators.items[0].base_points_generated.clone()*1000/TICK_RATE*&player.owned_pointgenerators.items[0].amount;
+    assert_eq!(gen_pps,2)
+}
 #[test]
 fn buy_click_upgrade1() {
     let mut player = Player::new("test");
@@ -139,6 +140,25 @@ fn buy_click_upgrade1() {
     assert_eq!(upgrades[0][0].name, "Key Upgrade 1");
     player.buy_upgrade(&mut upgrades, &mut upgrade_indexes, 0);
     assert_eq!(player.ppc, 2);
+}
+
+#[test]
+fn buy_click_upgrade2() {
+    let mut player = Player::new("test");
+    player.points += 1000000000;
+    // let mut generators = PointGenerator::make_generators();
+    let mut upgrades = Upgrade::make_upgrades();
+    let mut upgrade_indexes = Upgrade::create_upgrade_indexes(&mut upgrades, &player);
+    // player.buy_generator_amount(0, BuyAmount::ONE, &mut generators);
+    // assert_eq!(player.ppc, 1);
+    assert_eq!(upgrades[0][0].name, "Key Upgrade 1");
+    player.buy_upgrade(&mut upgrades, &mut upgrade_indexes, 0);
+    assert_eq!(player.owned_upgrades[0].name, "Key Upgrade 1");
+    assert_eq!(player.ppc, 2);
+    player.buy_upgrade(&mut upgrades, &mut upgrade_indexes, 0);
+    assert_eq!(player.owned_upgrades[1].name, "Key Upgrade 2");
+    assert_eq!(true,matches!(player.owned_upgrades[1].mulittype, MulitType::PointsMulti));
+    assert_eq!(player.ppc, 4);
 }
 #[test]
 fn test() {

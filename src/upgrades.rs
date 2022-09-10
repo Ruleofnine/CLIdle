@@ -1,6 +1,6 @@
 use crate::player::Player;
 use rug::Float;
-use tui::widgets::{ListState,ListItem};
+use tui::{style::Color,widgets::{ListState,ListItem}};
 
 #[derive(Clone, Debug)]
 pub enum MulitType {
@@ -141,24 +141,39 @@ impl Upgrade {
             Upgrade::new(
                 "Key Upgrade 2",
                 Float::with_val(10, 100),
-                MulitType::PointsMulti,
+                MulitType::PointsBase,
                 UpgradeType::Click,
-                Float::with_val(10, 2),
+                Float::with_val(30, 1.1),
             ),
             Upgrade::new(
                 "Key Upgrade 3",
-                Float::with_val(10, 5000),
-                MulitType::PointsMulti,
+                Float::with_val(10, 300),
+                MulitType::PointsBase,
                 UpgradeType::Click,
-                Float::with_val(10, 2),
+                Float::with_val(10, 3),
             ),
             Upgrade::new(
-                "Key Upgrade 4",
-                Float::with_val(10, 1e102),
+                "Key Upgrade 5",
+                Float::with_val(10, 500),
                 MulitType::PointsMulti,
                 UpgradeType::Click,
                 Float::with_val(10, 2),
             ),
+           Upgrade::new(
+                "Key Upgrade 6",
+                Float::with_val(10, 1500),
+                MulitType::PointsBase,
+                UpgradeType::Click,
+                Float::with_val(10, 10),
+            ),
+           Upgrade::new(
+                "Key Upgrade 7",
+                Float::with_val(10, 2000),
+                MulitType::PointsMulti,
+                UpgradeType::Click,
+                Float::with_val(10, 3),
+            ),
+
         ]
     }
     fn make_generator_upgrades() -> Vec<Vec<Upgrade>> {
@@ -168,14 +183,14 @@ impl Upgrade {
                 Upgrade::new(
                     "Gen 1, upgrade 1",
                     Float::with_val(20, 10),
-                    MulitType::PointsMulti,
+                    MulitType::PointsBase,
                     UpgradeType::Generator,
                     Float::with_val(20, 2),
                 ),
                 Upgrade::new(
                     "Gen 1, upgrade 2",
                     Float::with_val(20, 10),
-                    MulitType::PointsMulti,
+                    MulitType::PointsBase,
                     UpgradeType::Generator,
                     Float::with_val(20, 2),
                 ),

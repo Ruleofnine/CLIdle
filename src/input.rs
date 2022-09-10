@@ -1,4 +1,4 @@
-use crate::{app::App, utils::format_number};
+use crate::{app::{App,TabType}, utils::format_number};
 use std::collections::BTreeMap;
 #[derive(Debug)]
 pub enum InputMode {
@@ -9,14 +9,17 @@ pub fn take_input(input: &str, app: &mut App) {
     if input == "clear"{
         app.debug_info.items.clear();
     }
+    if input == "cheat"{
+        app.player.points+=1e100
+    }
     if input == "test"{
-        let upgrade_index = app.upgrade_state.upgrade_indexes[app.upgrade_state.state.selected().unwrap()];
-        app.debug_info.insert_and_goto_bottom(format!("upgrade index {:?}",app.upgrade_state.upgrade_indexes));
-        app.debug_info.insert_and_goto_bottom(format!("upgrade index selected {:?}",app.upgrade_state.upgrade_indexes[app.upgrade_state.state.selected().unwrap()]));
-        app.debug_info.insert_and_goto_bottom(format!("upgrade list 0 {:?}",app.upgrade_list[upgrade_index.0][upgrade_index.1]));
-        app.debug_info.insert_and_goto_bottom(format!("upgrade list len {:?}",app.upgrade_state.upgrade_indexes.len()));
-        app.debug_info.insert_and_goto_bottom(format!("upgrade_state {:?}",app.upgrade_state.state));
-        app.debug_info.insert_and_goto_bottom(format!("max index {:?}",app.upgrade_state.max_index));
+        // let upgrade_index = app.upgrade_state.upgrade_indexes[app.upgrade_state.state.selected().unwrap()];
+        // app.debug_info.insert_and_goto_bottom(format!("upgrade index {:?}",app.upgrade_state.upgrade_indexes));
+        // app.debug_info.insert_and_goto_bottom(format!("upgrade index selected {:?}",app.upgrade_state.upgrade_indexes[app.upgrade_state.state.selected().unwrap()]));
+        // app.debug_info.insert_and_goto_bottom(format!("upgrade list 0 {:?}",app.upgrade_list[upgrade_index.0][upgrade_index.1]));
+        // app.debug_info.insert_and_goto_bottom(format!("upgrade list len {:?}",app.upgrade_state.upgrade_indexes.len()));
+        // app.debug_info.insert_and_goto_bottom(format!("upgrade_state {:?}",app.upgrade_state.state));
+        // app.debug_info.insert_and_goto_bottom(format!("max index {:?}",app.upgrade_state.max_index));
         // app.debug_info.insert_and_goto_bottom(format!("{:?}",app.))
         // app.debug_info.insert_and_goto_bottom(format!("{:?}",app.tabs.tabs));
         // app.debug_info.insert_and_goto_bottom(format!("{:?}",app.tabs.index));
@@ -27,6 +30,7 @@ pub fn take_input(input: &str, app: &mut App) {
         ("ppt", &app.player.ppt),
         ("pps",&app.player.pps),
         ("ppc",&app.player.ppc),
+        ("ppcmod",&app.player.ppcmod),
         ("prestige points",&app.player.prestige_points)
     ]);
     match float_map.get(input) {

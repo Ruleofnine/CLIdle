@@ -1,5 +1,6 @@
 use core::cmp::Ordering;
 use rug::{float::Round, ops::MulAssignRound, Float};
+use tui::style::Color;
 pub struct F(pub f64);
 #[derive(Debug)]
 pub enum IntIs {
@@ -32,4 +33,13 @@ pub fn format_number(num:&Float) -> String {
             _ => format!("{}", num),
         };
         formatted_num
+}
+pub fn if_can_buy_style(cost: &Float, points: &Float) -> Color {
+    let color: Color;
+    if points > cost {
+        color = Color::White
+    } else {
+        color = Color::Red
+    }
+    color
 }
